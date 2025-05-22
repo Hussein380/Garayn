@@ -5,6 +5,8 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import ValuePropositions from "@/components/sections/value-propositions"
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog"
+import StartProjectForm from "@/components/start-project-form"
 
 export default function Hero() {
   return (
@@ -36,12 +38,17 @@ export default function Hero() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <Link href="#contact">
-              <Button size="lg" className="rounded-full px-8 text-lg h-14 group">
-                Start Your Project
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-            </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="lg" className="rounded-full px-8 text-lg h-14 group">
+                  Start Your Project
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <StartProjectForm />
+              </DialogContent>
+            </Dialog>
           </motion.div>
 
           <div className="relative w-full max-w-5xl mt-12 md:mt-20">

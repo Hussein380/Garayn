@@ -183,9 +183,15 @@ export default function Contact() {
                 <Button
                   variant="outline"
                   className="w-full rounded-lg border-secondary/20 hover:bg-secondary/10 transition-all duration-300 theme-transition"
-                  onClick={() => window.open('https://wa.me/254725996394?text=Hello%2C%20I%20would%20like%20to%20discuss%20a%20project.', '_blank')}
+                  asChild
                 >
-                  Chat on WhatsApp
+                  <a
+                    href="https://wa.me/254725996394?text=Hello%2C%20I%20would%20like%20to%20discuss%20a%20project."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Chat on WhatsApp
+                  </a>
                 </Button>
               </CardContent>
             </Card>
