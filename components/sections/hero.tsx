@@ -10,7 +10,7 @@ import StartProjectForm from "@/components/start-project-form"
 
 export default function Hero() {
   return (
-    <section className="pt-32 pb-16 md:pt-40 md:pb-24 overflow-hidden relative">
+    <section className="pt-48 pb-16 md:pt-56 md:pb-24 overflow-hidden relative">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-8 md:space-y-12">
           <motion.div
@@ -37,6 +37,7 @@ export default function Hero() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex gap-4"
           >
             <Dialog>
               <DialogTrigger asChild>
@@ -49,6 +50,13 @@ export default function Hero() {
                 <StartProjectForm />
               </DialogContent>
             </Dialog>
+
+            <Link href="/projects">
+              <Button size="lg" variant="outline" className="rounded-full px-8 text-lg h-14 group">
+                View Projects
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </motion.div>
 
           <div className="relative w-full max-w-5xl mt-12 md:mt-20">

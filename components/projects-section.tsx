@@ -19,6 +19,9 @@ const FEATURED_PROJECTS = [
     category: "Web Development",
     url: "/projects/e-commerce-platform",
     liveUrl: "https://example.com",
+    isPaid: true,
+    price: 299,
+    previewFeatures: ["Source Code", "Documentation", "1 Month Support"],
   },
   {
     id: "2",
@@ -29,6 +32,7 @@ const FEATURED_PROJECTS = [
     category: "Dashboard",
     url: "/projects/healthcare-dashboard",
     liveUrl: "https://example.com",
+    isPaid: false,
   },
   {
     id: "3",
@@ -91,7 +95,18 @@ export default function ProjectsSection() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                  {/* External link button - separate from the main card link */}
+                  {/* Project Status Badge */}
+                  <div className="absolute top-4 right-4">
+                    {project.isPaid ? (
+                      <Badge className="bg-primary text-primary-foreground">
+                        ${project.price}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">Free</Badge>
+                    )}
+                  </div>
+
+                  {/* External link button */}
                   <motion.div
                     className="absolute bottom-4 right-4"
                     initial={{ opacity: 0 }}
@@ -103,7 +118,7 @@ export default function ProjectsSection() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-primary/90 hover:bg-primary text-white p-2 rounded-full inline-flex items-center justify-center"
-                      onClick={(e) => e.stopPropagation()} // Prevent triggering the card click
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>
@@ -119,6 +134,20 @@ export default function ProjectsSection() {
                   <h3 className="text-xl font-bold mb-2">{project.title}</h3>
                   <p className="text-muted-foreground mb-4 flex-grow">{project.description}</p>
 
+                  {project.isPaid && project.previewFeatures && (
+                    <div className="mb-4">
+                      <div className="text-sm font-medium mb-2">Includes:</div>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        {project.previewFeatures.map((feature, i) => (
+                          <li key={i} className="flex items-center">
+                            <span className="mr-2">•</span>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap gap-2 mt-auto">
                     {project.tags.map((tag) => (
                       <span key={tag} className="text-xs px-2 py-1 rounded-full bg-secondary/10 text-secondary">
@@ -126,10 +155,23 @@ export default function ProjectsSection() {
                       </span>
                     ))}
                   </div>
+
+                  {/* Action Button */}
+                  <div className="mt-4">
+                    {project.isPaid ? (
+                      <Button className="w-full" variant="default">
+                        Purchase Project
+                      </Button>
+                    ) : (
+                      <Button className="w-full" variant="outline" asChild>
+                        <Link href={project.url}>View Details</Link>
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Make the entire card clickable with an overlay link */}
-                <Link href={project.url} className="absolute inset-0 z-10 focus:outline-none">
+                {/* Make the entire card clickable except for the purchase button */}
+                <Link href={project.url} className="absolute inset-0 z-10 focus:outline-none" aria-hidden="true">
                   <span className="sr-only">View {project.title} details</span>
                 </Link>
               </div>

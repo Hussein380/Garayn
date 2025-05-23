@@ -46,9 +46,8 @@ export default function Navbar() {
       initial="hidden"
       animate="visible"
       variants={navVariants}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 theme-transition ${
-        isScrolled ? "glass-effect backdrop-blur-md" : "bg-transparent"
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 theme-transition ${isScrolled ? "glass-effect backdrop-blur-md" : "bg-transparent"
+        }`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 md:h-24">
@@ -60,7 +59,20 @@ export default function Navbar() {
 
           <div className="hidden md:block">
             <motion.nav variants={navVariants} className="ml-10 flex items-center space-x-8">
-              {["About", "Services", "How It Works", "Contact"].map((item) => (
+              <motion.div variants={itemVariants}>
+                <Link
+                  href="/projects"
+                  className="text-foreground/80 hover:text-primary transition-colors duration-300 animated-underline"
+                >
+                  Projects
+                </Link>
+              </motion.div>
+              {[
+                "About",
+                "Services",
+                "How It Works",
+                "Contact"
+              ].map((item) => (
                 <motion.div key={item} variants={itemVariants}>
                   <Link
                     href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
