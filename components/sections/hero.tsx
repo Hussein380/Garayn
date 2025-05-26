@@ -19,14 +19,14 @@ export default function Hero() {
             transition={{ duration: 0.6 }}
             className="space-y-4 max-w-full sm:max-w-3xl px-2"
           >
-            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-tight break-words w-full">
-              We Build Custom{" "}
-              <div className="rotating-words inline-block min-w-0 break-words w-full align-middle">
-                <span className="block w-full break-words text-primary">Websites</span>
-                <span className="block w-full break-words text-secondary">Applications</span>
-                <span className="block w-full break-words text-accent">Automations</span>
-                <span className="block w-full break-words" style={{ wordBreak: 'break-word' }}>Solutions</span>
-              </div>
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-tight text-center">
+              We Build Custom{' '}
+              <span className="rotating-words inline-block align-middle whitespace-nowrap">
+                <span className="text-primary">Websites</span>
+                <span className="text-secondary">Applications</span>
+                <span className="text-accent">Automations</span>
+                <span style={{ wordBreak: 'break-word' }}>Solutions</span>
+              </span>
             </h1>
             <p className="text-base sm:text-lg md:text-2xl text-muted-foreground mt-4 sm:mt-6">
               Fast, tailored solutions built around your goals.
