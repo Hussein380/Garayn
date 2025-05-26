@@ -75,10 +75,10 @@ export default function ProjectFilters() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 min-w-0 w-full md:w-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 min-w-0 flex-shrink">
                 <Filter className="h-4 w-4" />
                 Category
                 {selectedCategories.length > 0 && (
@@ -105,7 +105,7 @@ export default function ProjectFilters() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 min-w-0 flex-shrink">
                 <Filter className="h-4 w-4" />
                 Technology
                 {selectedTechnologies.length > 0 && (
@@ -132,7 +132,7 @@ export default function ProjectFilters() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 min-w-0 flex-shrink">
                 <Filter className="h-4 w-4" />
                 Year
                 {selectedYears.length > 0 && (

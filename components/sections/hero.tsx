@@ -10,25 +10,25 @@ import StartProjectForm from "@/components/start-project-form"
 
 export default function Hero() {
   return (
-    <section className="pt-48 pb-16 md:pt-56 md:pb-24 overflow-hidden relative">
+    <section className="pt-32 pb-12 md:pt-56 md:pb-24 overflow-hidden relative">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-8 md:space-y-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="space-y-4 max-w-3xl"
+            className="space-y-4 max-w-full sm:max-w-3xl px-2"
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-tight">
+            <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter leading-tight break-words w-full">
               We Build Custom{" "}
-              <div className="rotating-words inline-block">
-                <span>Websites</span>
-                <span>Applications</span>
-                <span>Automations</span>
-                <span>Solutions</span>
+              <div className="rotating-words inline-block min-w-0 break-words w-full align-middle">
+                <span className="block w-full break-words text-primary">Websites</span>
+                <span className="block w-full break-words text-secondary">Applications</span>
+                <span className="block w-full break-words text-accent">Automations</span>
+                <span className="block w-full break-words" style={{ wordBreak: 'break-word' }}>Solutions</span>
               </div>
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mt-6">
+            <p className="text-base sm:text-lg md:text-2xl text-muted-foreground mt-4 sm:mt-6">
               Fast, tailored solutions built around your goals.
             </p>
           </motion.div>
@@ -37,11 +37,11 @@ export default function Hero() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="flex gap-4"
+            className="flex flex-col sm:flex-row gap-4 w-full max-w-xs sm:max-w-none justify-center"
           >
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="lg" className="rounded-full px-8 text-lg h-14 group">
+                <Button size="lg" className="rounded-full px-6 text-base sm:px-8 sm:text-lg h-12 sm:h-14 group w-full sm:w-auto">
                   Start Your Project
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
@@ -51,8 +51,8 @@ export default function Hero() {
               </DialogContent>
             </Dialog>
 
-            <Link href="/projects">
-              <Button size="lg" variant="outline" className="rounded-full px-8 text-lg h-14 group">
+            <Link href="/projects" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="rounded-full px-6 text-base sm:px-8 sm:text-lg h-12 sm:h-14 group w-full sm:w-auto">
                 View Projects
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
