@@ -115,12 +115,25 @@ export default function Navbar() {
           className="md:hidden glass-effect backdrop-blur-md"
         >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {["About", "Services", "How It Works", "Contact"].map((item, index) => (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0 }}
+            >
+              <Link
+                href="/projects"
+                className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:text-primary hover:bg-primary/10 transition-colors duration-300"
+                onClick={() => setIsOpen(false)}
+              >
+                Projects
+              </Link>
+            </motion.div>
+            {['About', 'Services', 'How It Works', 'Contact'].map((item, index) => (
               <motion.div
                 key={item}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ delay: (index + 1) * 0.1 }}
               >
                 <Link
                   href={`#${item.toLowerCase().replace(/\s+/g, "-")}`}
