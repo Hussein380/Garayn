@@ -5,9 +5,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import ReactCrop, { type Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import imageCompression from 'browser-image-compression';
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -23,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loading } from "@/components/ui/loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Upload, Image as ImageIcon, Trash2 } from "lucide-react";
+import { X, Trash2, Upload } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
     Select,
@@ -32,19 +29,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
 
 const projectSchema = z.object({
     title: z.string().min(1, "Title is required").max(100, "Title is too long"),
     description: z.string().min(1, "Description is required").max(500, "Description is too long"),
-    image: z.string().url("Must be a valid URL").min(1, "Main image is required"),
-    gallery: z.array(z.string().url()).optional(),
+    image: z.string().min(1, "Project image is required"),
+    gallery: z.array(z.string()).optional(),
     tags: z.array(z.string()).min(1, "At least one tag is required"),
     category: z.string().min(1, "Category is required"),
     url: z.string().url("Must be a valid URL").min(1, "Project URL is required"),
@@ -60,12 +50,6 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
-interface ImageUpload {
-    file: File;
-    preview: string;
-    crop: Crop;
-}
-
 const categories = [
     "Web Application",
     "Mobile App",
@@ -77,17 +61,17 @@ const categories = [
     "Other"
 ];
 
+type UploadStatus = 'idle' | 'uploading' | 'success' | 'error';
+
 export default function NewProjectPage() {
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
+    const [mainImageUrl, setMainImageUrl] = useState("");
+    const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
     const [newTag, setNewTag] = useState("");
     const [newFeature, setNewFeature] = useState("");
-    const [mainImage, setMainImage] = useState<ImageUpload | null>(null);
-    const [galleryImages, setGalleryImages] = useState<ImageUpload[]>([]);
-    const [showCropDialog, setShowCropDialog] = useState(false);
-    const [currentImageIndex, setCurrentImageIndex] = useState<number | null>(null);
-    const imageRef = useRef<HTMLImageElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadStatus, setUploadStatus] = useState<UploadStatus>('idle');
 
     const form = useForm<ProjectFormValues>({
         resolver: zodResolver(projectSchema),
@@ -112,131 +96,36 @@ export default function NewProjectPage() {
 
     const isPaid = form.watch("isPaid");
 
-    const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>, isGallery: boolean = false) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        try {
-            // Compress image before showing crop dialog
-            const options = {
-                maxSizeMB: 1,
-                maxWidthOrHeight: 1920,
-                useWebWorker: true,
-            };
-            const compressedFile = await imageCompression(file, options);
-
-            const imageUrl = URL.createObjectURL(compressedFile);
-            const imageUpload: ImageUpload = {
-                file: compressedFile,
-                preview: imageUrl,
-                crop: {
-                    unit: '%',
-                    width: 100,
-                    height: 100,
-                    x: 0,
-                    y: 0,
-                },
-            };
-
-            if (isGallery) {
-                setGalleryImages([...galleryImages, imageUpload]);
-                setCurrentImageIndex(galleryImages.length);
-            } else {
-                setMainImage(imageUpload);
-                setCurrentImageIndex(null);
-            }
-            setShowCropDialog(true);
-        } catch (error) {
-            console.error('Error processing image:', error);
-            toast.error('Failed to process image');
-        }
-    };
-
-    const handleCropComplete = async (crop: Crop) => {
-        if (!imageRef.current) return;
-
-        const currentImage = currentImageIndex === null ? mainImage : galleryImages[currentImageIndex];
-        if (!currentImage) return;
-
-        try {
-            const croppedImage = await getCroppedImg(
-                imageRef.current,
-                crop,
-                currentImage.file.name
-            );
-
-            if (currentImageIndex === null) {
-                setMainImage({ ...currentImage, crop, file: croppedImage.file, preview: croppedImage.preview });
-            } else {
-                const newGallery = [...galleryImages];
-                newGallery[currentImageIndex] = { ...currentImage, crop, file: croppedImage.file, preview: croppedImage.preview };
-                setGalleryImages(newGallery);
-            }
-
-            setShowCropDialog(false);
-        } catch (error) {
-            console.error('Error cropping image:', error);
-            toast.error('Failed to crop image');
-        }
-    };
-
-    const uploadImage = async (imageUpload: ImageUpload): Promise<string> => {
-        const formData = new FormData();
-        formData.append('file', imageUpload.file);
-
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData,
-        });
-
-        if (!response.ok) {
-            throw new Error('Upload failed');
-        }
-
-        const data = await response.json();
-        return data.url;
-    };
-
     const onSubmit = async (data: ProjectFormValues) => {
         try {
             setIsSubmitting(true);
-            setIsUploading(true);
 
-            // Upload main image
-            if (mainImage) {
-                const mainImageUrl = await uploadImage(mainImage);
-                data.image = mainImageUrl;
-            }
-
-            // Upload gallery images
-            if (galleryImages.length > 0) {
-                const galleryUrls = await Promise.all(
-                    galleryImages.map(image => uploadImage(image))
-                );
-                data.gallery = galleryUrls;
-            }
-
-            const response = await fetch("/api/projects", {
-                method: "POST",
+            const response = await fetch('/api/admin/projects', {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
             });
 
             if (!response.ok) {
-                throw new Error("Failed to create project");
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            toast.success("Project created successfully");
-            router.push("/admin/projects");
+            toast.success('Project created successfully');
+            router.push('/admin/projects');
         } catch (error) {
-            console.error("Error creating project:", error);
-            toast.error("Failed to create project");
+            console.error('Error creating project:', error);
+            toast.error('Failed to create project');
         } finally {
             setIsSubmitting(false);
-            setIsUploading(false);
         }
+    };
+
+    const removeGalleryUrl = (url: string) => {
+        const newUrls = galleryUrls.filter(u => u !== url);
+        setGalleryUrls(newUrls);
+        form.setValue("gallery", newUrls);
     };
 
     const addTag = () => {
@@ -275,9 +164,110 @@ export default function NewProjectPage() {
         );
     };
 
-    const removeGalleryImage = (index: number) => {
-        setGalleryImages(galleryImages.filter((_, i) => i !== index));
+    const handleFileUpload = async (file: File) => {
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please upload an image file (JPG, PNG, or GIF)');
+            return;
+        }
+
+        // Validate file size (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('File size must be less than 5MB');
+            return;
+        }
+
+        try {
+            setUploadStatus('uploading');
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Upload failed');
+            }
+
+            const data = await response.json();
+            if (!data.url) {
+                throw new Error('No URL returned from upload');
+            }
+
+            form.setValue('image', data.url);
+            setMainImageUrl(data.url);
+            setUploadStatus('success');
+            toast.success('Image uploaded successfully');
+        } catch (error) {
+            console.error('Upload error:', error);
+            setUploadStatus('error');
+            if (error instanceof Error) {
+                toast.error(`Failed to upload image: ${error.message}`);
+            } else {
+                toast.error('Failed to upload image. Please try again.');
+            }
+            // Clear the file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
     };
+
+    const handleGalleryUpload = async (file: File) => {
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please upload an image file (JPG, PNG, or GIF)');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error('File size must be less than 5MB');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Upload failed');
+            }
+
+            const data = await response.json();
+            if (!data.url) {
+                throw new Error('No URL returned from upload');
+            }
+
+            setGalleryUrls([...galleryUrls, data.url]);
+            form.setValue("gallery", [...galleryUrls, data.url]);
+            toast.success('Image added to gallery');
+        } catch (error) {
+            console.error('Upload error:', error);
+            if (error instanceof Error) {
+                toast.error(`Failed to upload image: ${error.message}`);
+            } else {
+                toast.error('Failed to upload image. Please try again.');
+            }
+            // Clear the file input
+            if (galleryInputRef.current) {
+                galleryInputRef.current.value = '';
+            }
+        }
+    };
+
+    const galleryInputRef = useRef<HTMLInputElement>(null);
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
@@ -403,45 +393,70 @@ export default function NewProjectPage() {
                                 name="image"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Main Project Image</FormLabel>
+                                        <FormLabel>Project Image</FormLabel>
                                         <FormControl>
                                             <div className="space-y-4">
-                                                <div className="flex items-center gap-4">
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => handleImageSelect(e, false)}
-                                                        disabled={isUploading}
-                                                        className="flex-1"
-                                                    />
-                                                    {isUploading && (
-                                                        <Loading size="sm" />
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => fileInputRef.current?.click()}
+                                                            disabled={uploadStatus === 'uploading'}
+                                                            className="w-full"
+                                                        >
+                                                            {uploadStatus === 'uploading' ? (
+                                                                <>
+                                                                    <Loading size="sm" className="mr-2" />
+                                                                    Uploading...
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Upload className="mr-2 h-4 w-4" />
+                                                                    {mainImageUrl ? 'Change Image' : 'Upload Project Image'}
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="hidden"
+                                                            ref={fileInputRef}
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) handleFileUpload(file);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    {mainImageUrl && (
+                                                        <div className="relative aspect-video w-full max-w-md rounded-lg overflow-hidden border">
+                                                            <img
+                                                                src={mainImageUrl}
+                                                                alt="Project preview"
+                                                                className="object-cover w-full h-full"
+                                                                onError={() => {
+                                                                    toast.error("Could not load image. Please try uploading again.");
+                                                                    setMainImageUrl("");
+                                                                    field.onChange("");
+                                                                }}
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setMainImageUrl("");
+                                                                    field.onChange("");
+                                                                }}
+                                                                className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </div>
-                                                {mainImage && (
-                                                    <div className="relative aspect-video w-full max-w-md rounded-lg overflow-hidden border">
-                                                        <img
-                                                            src={mainImage.preview}
-                                                            alt="Project preview"
-                                                            className="object-cover w-full h-full"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setMainImage(null)}
-                                                            className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                <Input
-                                                    type="hidden"
-                                                    {...field}
-                                                />
                                             </div>
                                         </FormControl>
                                         <FormDescription>
-                                            Upload a main project image (max 5MB, JPG, PNG, or GIF)
+                                            Upload a project image (max 5MB, JPG, PNG, or GIF)
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -456,43 +471,60 @@ export default function NewProjectPage() {
                                         <FormLabel>Gallery Images</FormLabel>
                                         <FormControl>
                                             <div className="space-y-4">
-                                                <div className="flex items-center gap-4">
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => handleImageSelect(e, true)}
-                                                        disabled={isUploading}
-                                                        className="flex-1"
-                                                    />
-                                                    {isUploading && (
-                                                        <Loading size="sm" />
-                                                    )}
-                                                </div>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                                    {galleryImages.map((image, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="relative aspect-square rounded-lg overflow-hidden border"
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => galleryInputRef.current?.click()}
+                                                            className="w-full"
                                                         >
-                                                            <img
-                                                                src={image.preview}
-                                                                alt={`Gallery image ${index + 1}`}
-                                                                className="object-cover w-full h-full"
-                                                            />
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeGalleryImage(index)}
-                                                                className="absolute top-2 right-2 p-1 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                                                            <Upload className="mr-2 h-4 w-4" />
+                                                            Add Gallery Image
+                                                        </Button>
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="hidden"
+                                                            ref={galleryInputRef}
+                                                            onChange={(e) => {
+                                                                const file = e.target.files?.[0];
+                                                                if (file) handleGalleryUpload(file);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                                        {galleryUrls.map((url, index) => (
+                                                            <div
+                                                                key={index}
+                                                                className="relative aspect-square rounded-lg overflow-hidden border group"
                                                             >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
+                                                                <img
+                                                                    src={url}
+                                                                    alt={`Gallery image ${index + 1}`}
+                                                                    className="object-cover w-full h-full"
+                                                                    onError={() => {
+                                                                        toast.error("Could not load image");
+                                                                        removeGalleryUrl(url);
+                                                                    }}
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => removeGalleryUrl(url)}
+                                                                        className="p-2 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                                                                    >
+                                                                        <Trash2 className="h-5 w-5" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </FormControl>
                                         <FormDescription>
-                                            Add additional images to the project gallery (max 5MB each)
+                                            Add multiple images to your project gallery (max 5MB each, JPG, PNG, or GIF)
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -746,85 +778,6 @@ export default function NewProjectPage() {
                     </Form>
                 </CardContent>
             </Card>
-
-            <Dialog open={showCropDialog} onOpenChange={setShowCropDialog}>
-                <DialogContent className="max-w-3xl">
-                    <DialogHeader>
-                        <DialogTitle>Crop Image</DialogTitle>
-                    </DialogHeader>
-                    <div className="mt-4">
-                        {((currentImageIndex === null && mainImage) || (currentImageIndex !== null && galleryImages[currentImageIndex])) && (
-                            <ReactCrop
-                                crop={currentImageIndex === null ? mainImage!.crop : galleryImages[currentImageIndex].crop}
-                                onChange={(c) => {
-                                    if (currentImageIndex === null) {
-                                        setMainImage({ ...mainImage!, crop: c });
-                                    } else {
-                                        const newGallery = [...galleryImages];
-                                        newGallery[currentImageIndex] = { ...newGallery[currentImageIndex], crop: c };
-                                        setGalleryImages(newGallery);
-                                    }
-                                }}
-                                onComplete={handleCropComplete}
-                                aspect={16 / 9}
-                            >
-                                <img
-                                    ref={imageRef}
-                                    src={currentImageIndex === null ? mainImage!.preview : galleryImages[currentImageIndex].preview}
-                                    alt="Crop preview"
-                                    className="max-h-[60vh] w-auto"
-                                />
-                            </ReactCrop>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     );
-}
-
-// Helper function to get cropped image
-function getCroppedImg(
-    image: HTMLImageElement,
-    crop: Crop,
-    fileName: string
-): Promise<{ file: File; preview: string }> {
-    const canvas = document.createElement('canvas');
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-    const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-        throw new Error('No 2d context');
-    }
-
-    ctx.drawImage(
-        image,
-        crop.x * scaleX,
-        crop.y * scaleY,
-        crop.width * scaleX,
-        crop.height * scaleY,
-        0,
-        0,
-        crop.width,
-        crop.height
-    );
-
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(
-            (blob) => {
-                if (!blob) {
-                    reject(new Error('Canvas is empty'));
-                    return;
-                }
-                const file = new File([blob], fileName, { type: 'image/jpeg' });
-                const preview = URL.createObjectURL(blob);
-                resolve({ file, preview });
-            },
-            'image/jpeg',
-            0.95
-        );
-    });
 } 
